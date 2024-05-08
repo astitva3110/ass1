@@ -18,18 +18,6 @@ password:{
     type:String,
     required:true
 },
-profile_picture:{
-    type:String,
-    default:""
-},
-follower:[{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:'user'
-}],
-following:[{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:'user'
-}],
 post:[{
     type:mongoose.Schema.Types.ObjectId,
     ref:'Post'
