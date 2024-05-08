@@ -1,11 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const Post = require('../models/Post');
-const {connectdb }= require('../util/database');
 require('dotenv').config();
-
-connectdb();
-
 
 
 //Create the post for a user 
@@ -13,14 +9,20 @@ exports.postPOST=async(req,res)=>{
   const {text}=req.body
   const user_id=req.params.user_id; 
   try{
+    //fetching th user info
     const user =await User.findById(user_id);
-    if (!user){
+
+    
+    if (!user){//if user is not found
      res.status(404).json({message:"user not found"});
     }
+    // creating the post
      const newPost=new Post({
         name:user_id,
         text
      })
+
+     //saving the post 
     await newPost.save();
      user.post.push(newPost._id);
      await user.save();
@@ -39,19 +41,18 @@ exports.postPOST=async(req,res)=>{
     exports.getAllPost=async(req,res)=>{
        const userId=req.params.user_id;
        try{
-        const user=await User.findById(userId);
 
+        //fetching the user info
+        const user=await User.findById(userId);
+        const post=await Post.find();
+
+        //if user is no present
         if(!user){
          res.status(404).json({message:"user is not found"});
         }
-        const postsfromUser= await Post.find({ name: { $in: user.followers } })
-       .sort({ createdAt: -1 })
-       .populate('name', 'name');
-        
-       if(!postsfromUser){
-         res.status(404).json({message:"NO post is available"});
-       }
-       res.status(200).json(postsfromUser.text);
+
+       //sending the all the post
+       res.status(200).json(post.text);
        }
        catch(err){
         console.error(err);
@@ -68,15 +69,20 @@ exports.postPOST=async(req,res)=>{
         try{
             const post=await Post.findById(postId);
 
+            //if post is no present
             if(!post){
                  res.status(404).json({message:"Post Not Found"});
             }
+
+            //if Unauthorized user access this
             if(userId!=post.name){
                  res.status(500).json({message:"You Are Not Authorized "});
             }
+
+            //updating the post
             post.text=newText;
             post.save();
-            res.status(200).json({message:"Post Is Updated"});
+            res.status(200).json({message:"Post Is Updated",Post:post});
         }
         catch(err){
             console.error(err);
@@ -86,12 +92,12 @@ exports.postPOST=async(req,res)=>{
     }
 
 
-
+    //delete the post
     exports.delete=async(req,res)=>{
       const postId = req.params.post_id;
 
       try {
-        
+            //find the post and delte the post
             await Post.findByIdAndDelete(postId);
   
           res.status(200).json({ message: "Post deleted successfully" });
@@ -102,22 +108,27 @@ exports.postPOST=async(req,res)=>{
         
     }
 
+
     //like a post
     exports.likePost=async(req,res)=>{
+
       const userId=req.body.user_id; 
       const postId=req.params.post_id;
-      try{
-      const user=await User.findById(userId);
-      const post=await Post.findById(postId);
-     
-    
-    
-      if(!post){
-        res.status(404).json({message:"Post id not found"});
-      }
-       post.likes.push(user._id);
-       await post.save();
-       res.status(200).json({message:"post is liked"});
+
+       try{
+        //fetching the user and post info
+         const user=await User.findById(userId);
+         const post=await Post.findById(postId);
+  
+         //if post is no present
+         if(!post){
+            res.status(404).json({message:"Post id not found"});
+        }
+
+        //pushing the userID
+         post.likes.push(user._id);
+         await post.save();
+         res.status(200).json({message:"post is liked",Post:post});
       
       }
        catch(err){
@@ -127,23 +138,26 @@ exports.postPOST=async(req,res)=>{
      }
 
      exports.unlikePost=async(req,res)=>{
-      const userId=req.body.user_id; 
-      const postId=req.params.post_id;
-      try{
-      const user=await User.findById(userId);
-      const post=await Post.findById(postId);
-     
+        const userId=req.body.user_id; 
+        const postId=req.params.post_id;
+        try{
+           //fetching the user and post
+          const user=await User.findById(userId);
+          const post=await Post.findById(postId);
     
-    
-      if(!post){
-        res.status(404).json({message:"Post id not found"});
-      }
-      if(!post.likes.includes(userId)){
-        res.status(500).json({message:"the is not liked"});
-      }
-       post.likes.pull(post._id);
-       await user.save();
-       res.status(200).json({message:"post  is unliked"});
+          //if post is no present
+          if(!post){
+             res.status(404).json({message:"Post id not found"});
+          }
+
+          //if user not liked that post
+          if(!post.likes.includes(userId)){
+              res.status(500).json({message:"the is not liked"});
+          }
+          //pulling the userId 
+         await post.likes.pull(userId);
+          await user.save();
+          res.status(200).json({message:"post  is unliked" ,Post:post});
       
       }
        catch(err){
