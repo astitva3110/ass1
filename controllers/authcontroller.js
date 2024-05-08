@@ -2,6 +2,7 @@ const express=require('express');
 const User=require('../models/User')
 const {connectdb}=require('../util/database');
 const bcrypt=require('bcrypt');
+const jwt=require('jsonwebtoken');
 require('dotenv').config();
 const { Resend } =require('resend');
 const resend = new Resend(process.env.Resend);
@@ -57,11 +58,17 @@ exports.postSignup=async(req,res)=>{
 
 //post request for login 
 exports.postLogin=async(req,res)=>{
+
+  //feching user data
     const user=await User.findOne({email:req.body.email});
     if(user){
     const confirmPassword=await bcrypt.compare(req.body.password,user.password);
+
     if(confirmPassword){
-        res.status(200).json({message:'user is login'})
+      //creating jwt token
+      const token=jwt.sign({_id:user._id},process.env.JWT_KEY,{expiresIn:process.env.JWT_EXPIRE})
+      res.cookie("token",token)
+      res.status(200).json({message:'user is login'})
     }
     else{
         res.status(400).json({message:'password is incorrect'});
