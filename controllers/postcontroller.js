@@ -7,10 +7,10 @@ require('dotenv').config();
 //Create the post for a user 
 exports.postPOST=async(req,res)=>{
   const {text}=req.body
-  const user_id=req.params.user_id; 
+  const user_id=req.user; 
   try{
     //fetching th user info
-    const user =await User.findById(user_id);
+    const user =await User.findById(user_id.id);
 
     
     if (!user){//if user is not found
@@ -18,7 +18,7 @@ exports.postPOST=async(req,res)=>{
     }
     // creating the post
      const newPost=new Post({
-        name:user_id,
+        name:user_id.id,
         text
      })
 

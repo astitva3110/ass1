@@ -1,13 +1,12 @@
 const express=require('express');
 const User=require('../models/User')
-const {connectdb}=require('../util/database');
 const bcrypt=require('bcrypt');
 const jwt=require('jsonwebtoken');
 require('dotenv').config();
 const { Resend } =require('resend');
 const resend = new Resend(process.env.Resend);
+const {genratetoken}=require('../middleware/isLogin');
 
-connectdb();
 
 
 //function for grenerating the otp
@@ -66,9 +65,12 @@ exports.postLogin=async(req,res)=>{
 
     if(confirmPassword){
       //creating jwt token
-      const token=jwt.sign({_id:user._id},process.env.JWT_KEY,{expiresIn:process.env.JWT_EXPIRE})
-      res.cookie("token",token)
-      res.status(200).json({message:'user is login'})
+      const playload={
+        id:user._id,
+        email:user.email
+      }
+     const token=genratetoken(playload);
+      res.status(200).json({message:'user is login',token:token})
     }
     else{
         res.status(400).json({message:'password is incorrect'});

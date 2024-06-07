@@ -2,18 +2,32 @@ const jwt=require("jsonwebtoken")
 require('dotenv').config();
 
 const isLogin=(req,res,next)=>{
-    // console.log("Cookies:", req.cookies);
-    const token=req.cookies && req.cookies.token
-    if(!token){
-        res.status(404).json({message:"user not login"})
+
+    const auth = req.headers.authorization;
+    if (!auth) {
+        return res.status(401).json({ message: "Token not found" });
     }
-    jwt.verify(token,process.env.JWT_KEY,async(err,data)=>{
-        if(err){
-            console.log(err);
-            res.status(500).json({message:"token did not matched"})
-        }
-        next()
-    })
+    const token = auth.split(' ')[1];
+    if(!token){
+        res.status(404).json({message:"user is not login"})
+    }
+    try{
+    const decoded=jwt.verify(token,process.env.JWT_KEY);
+    req.user=decoded;
+    next();
+    }
+    catch(err){
+        console.error(err);
+        res.status(401).json({error:"Invalid token"});
+    }
 }
 
-module.exports=isLogin;
+
+
+const genratetoken=(userdata)=>{
+      return jwt.sign(userdata,process.env.JWT_KEY);
+}
+
+
+
+module.exports={isLogin,genratetoken};
